@@ -7,6 +7,10 @@ import com.example.EMS_backend.exception.ResourceNotFoundException;
 import com.example.EMS_backend.repository.EmployeeRepository;
 import com.example.EMS_backend.service.EmployeeService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -18,42 +22,53 @@ public class EmployeeServiceImpl implements EmployeeService{
     private EmployeeRepository employeeRepository;
     @Override
     public EmployeeDto createEmployee(EmployeeDto employeeDto) {
-       Employee employee= EmployeeMapper.mapToEmployee(employeeDto);
-      Employee savedEmployee= employeeRepository.save(employee);
+        Employee employee= EmployeeMapper.mapToEmployee(employeeDto);
+        employee.setDeleted(false);
+        Employee savedEmployee= employeeRepository.save(employee);
         return EmployeeMapper.mapToEmployeeDto((savedEmployee));
     }
 
     @Override
     public EmployeeDto getEmployeeById(Long employeeId) {
-        try {
-            Employee employee = employeeRepository.findById(employeeId)
-                    .orElseThrow(() -> new ResourceNotFoundException("Employee does not exist with the given id : " + employeeId));
-            return EmployeeMapper.mapToEmployeeDto(employee);
-        } catch (ResourceNotFoundException e) {
-            throw new ResourceNotFoundException("Employee does not exist with the given id : " + employeeId);
-        } catch (Exception e) {
-            throw new RuntimeException("An error occurred while fetching the employee", e);
+        Employee employee = employeeRepository.findById(employeeId)
+                .orElseThrow(() -> new ResourceNotFoundException("Employee does not exist with the given id: " + employeeId));
+
+        if (employee.isDeleted()) {
+            throw new ResourceNotFoundException("Employee does not exist with the given id: " + employeeId);
         }
+
+        return EmployeeMapper.mapToEmployeeDto(employee);
     }
+
 
     @Override
-    public List<EmployeeDto> getAllEmployees() {
-        try {
-            List<Employee> employees = employeeRepository.findAll();
-            return employees.stream()
-                    .map(employee -> EmployeeMapper.mapToEmployeeDto(employee))
-                    .collect(Collectors.toList());
-        } catch (Exception e) {
-            throw new RuntimeException("An error occurred while fetching the employees", e);
-        }
-    }
+    public List<EmployeeDto> getAllEmployees(int page, int size, String sortDir, String sortBy) {
+        Sort.Direction direction = sortDir.equalsIgnoreCase("desc") ? Sort.Direction.DESC : Sort.Direction.ASC;
 
+        List<String> validFields = List.of("id", "firstName", "lastName", "email");
+        if (!validFields.contains(sortBy)) {
+            throw new IllegalArgumentException("Invalid sort field: " + sortBy);
+        }
+
+        Sort sort = Sort.by(direction, sortBy);
+        Pageable pageable = PageRequest.of(page, size, sort);
+        Page<Employee> employeePage = employeeRepository.findByDeletedFalse(pageable);
+
+        return employeePage.stream()
+                .map(EmployeeMapper::mapToEmployeeDto)
+                .collect(Collectors.toList());
+    }
 
     @Override
     public EmployeeDto updateEmployee(Long employeeId, EmployeeDto updateEmployee) {
         try {
             Employee employee = employeeRepository.findById(employeeId)
                     .orElseThrow(() -> new ResourceNotFoundException("Employee does not exist with the given id: " + employeeId));
+
+            if (employee.isDeleted()) {
+                throw new ResourceNotFoundException("Employee does not exist with the given id: " + employeeId);
+            }
+
 
             employee.setFirstName(updateEmployee.getFirstName());
             employee.setLastName(updateEmployee.getLastName());
@@ -75,13 +90,35 @@ public class EmployeeServiceImpl implements EmployeeService{
         try {
             Employee employee = employeeRepository.findById(employeeId)
                     .orElseThrow(() -> new ResourceNotFoundException("Employee does not exist with the given id: " + employeeId));
-
-            employeeRepository.deleteById(employeeId);
+            employee.setDeleted(true);
+            employeeRepository.save(employee);
         } catch (ResourceNotFoundException e) {
             throw new ResourceNotFoundException("Employee does not exist with the given id: " + employeeId);
         } catch (Exception e) {
             throw new RuntimeException("An error occurred while deleting the employee", e);
         }
+    }
+    @Override
+    public EmployeeDto partialUpdateEmployee(Long employeeId, EmployeeDto partialUpdate) {
+        Employee employee = employeeRepository.findById(employeeId)
+                .orElseThrow(() -> new ResourceNotFoundException("Employee does not exist with the given id: " + employeeId));
+
+        if (employee.isDeleted()) {
+            throw new ResourceNotFoundException("Employee does not exist with the given id: " + employeeId);
+        }
+
+        if (partialUpdate.getFirstName() != null) {
+            employee.setFirstName(partialUpdate.getFirstName());
+        }
+        if (partialUpdate.getLastName() != null) {
+            employee.setLastName(partialUpdate.getLastName());
+        }
+        if (partialUpdate.getEmail() != null) {
+            employee.setEmail(partialUpdate.getEmail());
+        }
+
+        Employee updatedEmployee = employeeRepository.save(employee);
+        return EmployeeMapper.mapToEmployeeDto(updatedEmployee);
     }
 
 

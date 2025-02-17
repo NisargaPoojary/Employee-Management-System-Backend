@@ -5,7 +5,6 @@ import com.example.EMS_backend.service.EmployeeService;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -34,10 +33,16 @@ public class EmployeeController {
     }
 
     @GetMapping
-    public ResponseEntity<List<EmployeeDto>> getAllEmployees(){
-        List<EmployeeDto> employees=employeeService.getAllEmployees();
+    public ResponseEntity<List<EmployeeDto>> getAllEmployees(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "id") String sortBy,
+            @RequestParam(defaultValue = "asc") String sortDir
+    ) {
+        List<EmployeeDto> employees = employeeService.getAllEmployees(page, size, sortDir, sortBy);
         return ResponseEntity.ok(employees);
     }
+
 
     @PutMapping("{id}")
     public ResponseEntity<EmployeeDto> updateEmployee(@PathVariable("id") Long employeeId,@RequestBody EmployeeDto updateEmployee){
@@ -48,6 +53,14 @@ public class EmployeeController {
     @DeleteMapping("{id}")
     public ResponseEntity<String> deleteEmployee(@PathVariable("id") Long employeeId){
         employeeService.deleteEmployee(employeeId);
-        return ResponseEntity.ok("Employee deleted Successfully");
+        return ResponseEntity.ok("Employee marked as deleted successfully");
     }
+
+    @PatchMapping("{id}")
+    public ResponseEntity<EmployeeDto> partialUpdateEmployee(@PathVariable("id") Long employeeId, @RequestBody EmployeeDto partialUpdate) {
+        EmployeeDto updatedEmployee = employeeService.partialUpdateEmployee(employeeId, partialUpdate);
+        return ResponseEntity.ok(updatedEmployee);
+    }
+
+
 }

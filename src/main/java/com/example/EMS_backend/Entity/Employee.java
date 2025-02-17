@@ -9,24 +9,27 @@ public class Employee {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name="first_name")
+    @Column(name="first_name",nullable = false)
     private String firstName;
 
-    @Column(name="last_name")
+    @Column(name="last_name",nullable = false)
     private String lastName;
 
     @Column(name="email_id",nullable = false,unique = true)
     private  String email;
 
+    @Column(name="deleted",nullable = false)
+    private boolean deleted=false;
 
     public Employee() {
     }
 
-    public Employee(Long id, String firstName, String lastName, String email) {
+    public Employee(Long id, String firstName, String lastName, String email,boolean deleted) {
         this.id = id;
         this.firstName = firstName;
         this.lastName = lastName;
         this.email = email;
+        this.deleted = deleted;
     }
 
     public Long getId() {
@@ -60,4 +63,12 @@ public class Employee {
     public void setEmail(String email) {
         this.email = email;
     }
+    public boolean isDeleted() {
+        return deleted;
+    }
+
+    public void setDeleted(boolean deleted) {
+        this.deleted = deleted;
+    }
 }
+

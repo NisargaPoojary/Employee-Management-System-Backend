@@ -5,12 +5,15 @@ public class EmployeeDto {
     private String firstName;
     private String lastName;
     private String email;
+    private EmployeeAddressDto address;
 
-    public EmployeeDto(Long id, String firstName, String lastName, String email) {
+    public EmployeeDto(Long id, String firstName, String lastName, String email, EmployeeAddressDto address) {
         this.id = id;
         this.firstName = firstName;
         this.lastName = lastName;
         this.email = email;
+        this.address = address;
+
     }
 
     public Long getId() {
@@ -44,4 +47,12 @@ public class EmployeeDto {
     public void setEmail(String email) {
         this.email = email;
     }
+    public EmployeeAddressDto getAddress() {
+        return address;
+    }
+
+    public void setAddress(EmployeeAddressDto address) {
+        this.address = address;
+    }
+
 }

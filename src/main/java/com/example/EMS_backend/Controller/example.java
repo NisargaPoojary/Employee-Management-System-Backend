@@ -12,8 +12,8 @@ public class example {
 
     @GetMapping("/hello")
     public String sayHello() {
-        log.info("Hello endpoint was called");
-        log.error("This is an error log");
+        logger.info("Hello endpoint was called");
+        logger.error("This is an error log");
         return "Hello, World!";
     }
 }
